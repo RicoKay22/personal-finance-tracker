@@ -1,21 +1,29 @@
-# Personal Finance Tracker
+# 💰 Personal Finance Tracker
 
-A web app to track income and expenses with category, filter, and chart visualization.
+A simple web app to track your income, expenses, and visualize spending habits using charts.  
+Built with **HTML, CSS, JavaScript, and Chart.js**.
 
-## Live Demo
-[View on GitHub Pages](https://yourusername.github.io/personal-finance-tracker/)
+---
 
-## Features
-- Add income & expenses
-- Filter & sort by date/category
-- Data persists in browser storage
-- Visual chart (Chart.js)
-- CSV export
+## 🚀 Live Demo  
+👉 [View on GitHub Pages](https://ricokay22.github.io/personal-finance-tracker/)
 
-## Git Workflow Proof
-- Branches: main, dev, feat/add-transactions
-- Pull Request: merged feat/add-transactions → dev
-- Tag: v1.0
+---
+
+## ✨ Features
+- ➕ Add income & expenses  
+- 🗂️ Filter & sort by date/category  
+- 💾 Persistent data (localStorage)  
+- 📊 Interactive visual charts (Chart.js)  
+- 📤 Export to CSV  
+
+---
+
+## 🧩 Git Workflow Proof
+- Branches: `main`, `dev`, `feat/add-transactions`
+- Pull Request: merged `feat/add-transactions` → `dev`
+- Tag: `v1.0`
 
 ![Branch list screenshot](./screenshots/branches.png)
 ![Pull request screenshot](./screenshots/pr.png)
+
