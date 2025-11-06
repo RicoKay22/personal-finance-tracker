@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Personal Finance Tracker</title>
+
+  <!--  Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f7f8fa;
+    }
+    h1 {
+      text-align: center;
+    }
+    form, table, #filters {
+      max-width: 800px;
+      margin: 20px auto;
+    }
+    form input, form select {
+      margin: 5px;
+      padding: 8px;
+    }
+    form button {
+      padding: 8px 16px;
+      background: #4CAF50;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    form button:hover {
+      background: #43a047;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+      text-align: left;
+    }
+    th {
+      background: #4CAF50;
+      color: white;
+    }
+    tr:hover {
+      background: #f1f1f1;
+    }
+    #filters {
+      text-align: center;
+    }
+    #filters label, #filters select, #filters input {
+      margin: 5px;
+      padding: 6px;
+    }
+    canvas {
+      display: block;
+      margin: 30px auto;
+      max-width: 500px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <h1>Personal Finance Tracker</h1>
+
+  <!--  Transaction Form -->
+  <form id="transactionForm">
+    <input type="text" id="description" placeholder="Description" required />
+    <input type="number" id="amount" placeholder="Amount" required />
+    <select id="type" required>
+      <option value="">Type</option>
+      <option value="income">Income</option>
+      <option value="expense">Expense</option>
+    </select>
+    <input type="date" id="date" required />
+    <input type="text" id="category" placeholder="Category" required />
+    <button type="submit">Add Transaction</button>
+  </form>
+
+  <!--  Filters -->
+  <div id="filters">
+    <label>Filter:
+      <select id="filterCategory">
+        <option value="">All Categories</option>
+      </select>
+    </label>
+    <label>From: <input id="fromDate" type="date"></label>
+    <label>To: <input id="toDate" type="date"></label>
+    <label>Sort:
+      <select id="sortBy">
+        <option value="date_desc">Date ↓</option>
+        <option value="date_asc">Date ↑</option>
+        <option value="amount_desc">Amount ↓</option>
+        <option value="amount_asc">Amount ↑</option>
+      </select>
+    </label>
+    <button id="applyFilters">Apply</button>
+    <button id="exportCsv">Export CSV</button>
+  </div>
+
+  <!--  Chart Canvas -->
+  <canvas id="financeChart" width="400" height="200"></canvas>
+
+  <!--  Transactions Table -->
+  <table id="txTable">
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th>Amount</th>
+        <th>Type</th>
+        <th>Date</th>
+        <th>Category</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+    let chart; // Chart instance
+
+    const form = document.getElementById('transactionForm');
+    const tableBody = document.querySelector('#txTable tbody');
+    const filterCategory = document.getElementById('filterCategory');
+
+    //  Add Transaction
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const t = {
+        id: Date.now(),
+        description: document.getElementById('description').value.trim(),
+        amount: parseFloat(document.getElementById('amount').value),
+        type: document.getElementById('type').value,
+        date: document.getElementById('date').value,
+        category: document.getElementById('category').value.trim()
+      };
+      transactions.push(t);
+      localStorage.setItem('transactions', JSON.stringify(transactions));
+      form.reset();
+      renderTransactions();
+    });
+
+    //  Render Transactions
+    function renderTransactions() {
+      tableBody.innerHTML = '';
+      const cats = new Set();
+      transactions.forEach(t => {
+        cats.add(t.category);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${t.description}</td>
+          <td>${t.amount.toFixed(2)}</td>
+          <td>${t.type}</td>
+          <td>${t.date}</td>
+          <td>${t.category}</td>
+          <td><button onclick="deleteTx(${t.id})">❌</button></td>
+        `;
+        tableBody.appendChild(tr);
+      });
+
+      // Update filter dropdown
+      filterCategory.innerHTML = '<option value="">All Categories</option>' +
+        Array.from(cats).map(c => `<option value="${c}">${c}</option>`).join('');
+
+      renderChart(); // update chart
+    }
+
+    // Delete Transaction
+    function deleteTx(id) {
+      transactions = transactions.filter(t => t.id !== id);
+      localStorage.setItem('transactions', JSON.stringify(transactions));
+      renderTransactions();
+    }
+
+    // Render Chart
+    function renderChart() {
+      const ctx = document.getElementById('financeChart').getContext('2d');
+      const income = transactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + t.amount, 0);
+      const expense = transactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      if (chart) chart.destroy(); // prevent duplicates
+
+      chart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: ['Income', 'Expense'],
+          datasets: [{
+            data: [income, expense],
+            backgroundColor: ['#4CAF50', '#F44336']
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            title: { display: true, text: 'Income vs Expense' },
+            legend: { position: 'bottom' }
+          }
+        }
+      });
+    }
+
+    // Initialize
+    renderTransactions();
+  </script>
+</body>
+</html>
